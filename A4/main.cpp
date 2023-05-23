@@ -175,23 +175,51 @@ void deleteFile (BsFat* pFat, char* fileName) {
     for (int i = 0; i < pFat->numberOfFiles; i++) {
         if (strcmp(pFat->files[i]->name, fileName) == 0) {
             BsCluster* currentCluster = pFat->files[i]->cluster;
-            do {
+            while(currentCluster != nullptr) {
                 pFat->status[currentCluster->positionInStatusArray] = FREE;
                 BsCluster* nextCluster = currentCluster->nextElement;
                 delete currentCluster;
                 currentCluster = nextCluster;
-            } while(currentCluster != nullptr);
+            }
             delete pFat->files[i];
+            pFat->files[i] = nullptr;
 //            std::cout << pFat->files[i]->attributes << std::endl;
 //            std::cout << pFat->files[i]->name << std::endl; // nur zur Überprüfung
         }
     }
 }
 
+float getFragmentation(BsFat* pFat) {
+    float sumOfFrag = 0.0;
+    for (int i = 0; i < pFat->numberOfFiles; i++) {
+        BsCluster* currentCluster = pFat->files[i]->cluster;
+        if (currentCluster == nullptr) {
+            continue;
+        }
+        int minIndex = currentCluster->positionInStatusArray;
+        int maxIndex = currentCluster->positionInStatusArray;
+        int numberOfBlocks = 0;
+        while(currentCluster != nullptr) {
+            if (currentCluster->positionInStatusArray > maxIndex) {
+                maxIndex = currentCluster->positionInStatusArray;
+            } else if (currentCluster->positionInStatusArray < minIndex) {
+                minIndex = currentCluster->positionInStatusArray;
+            }
+            currentCluster = currentCluster->nextElement;
+            numberOfBlocks++;
+        }
+        int length = maxIndex - minIndex + 1;
+        std::cout << (float)(length - numberOfBlocks) / length << std::endl;
+        sumOfFrag += (float)(length - numberOfBlocks) / length;
+    }
+    return  sumOfFrag / pFat->numberOfFiles;
+}
+
 int main() {
     BsFat* test = createBsFat(512, 16384);
     deleteFile(test, "programm1.c");
     showFat(test);
+    std::cout << getFragmentation(test) << std::endl;
 
     std::cout << "Number of Blocks: " <<  numberOfBlocksGlobal << std::endl;
 }
