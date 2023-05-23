@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <string.h>
 
 #define RESERVED 'R'
 #define CORRUPTED 'D'
@@ -24,6 +25,7 @@ struct BsFile{
 struct BsFat{
     unsigned char* status;
     BsFile** files;
+    unsigned int numberOfFiles;
     unsigned int blockSize;
     unsigned int fatSize;
 };
@@ -45,6 +47,14 @@ bool checkConvention(const char* name, const unsigned int length){
         }
     }
     return true;
+}
+
+void showFat (BsFat* pFat) {
+    std::cout << "|";
+    for (int i = 0; i < (pFat->fatSize / pFat->blockSize); i++) {
+        std::cout << pFat->status[i]  << "|";
+    }
+    std::cout << std::endl;
 }
 
 int getFreeDiskSpace(BsFat* bsFat){
@@ -101,6 +111,7 @@ void createFile(BsFat* bsFat, int sizeFile, char* filename, unsigned char attrib
         pos = (rand() % (bsFat->fatSize / bsFat->blockSize));
         while(bsFat->status[pos] != FREE){
             if(getFreeDiskSpace(bsFat) == 0){
+                std::cout << "Fehler! Kein Speicher frei!" << std::endl;
                 break;
             }
             pos = (rand() % (bsFat->fatSize / bsFat->blockSize));
@@ -114,21 +125,22 @@ void createFile(BsFat* bsFat, int sizeFile, char* filename, unsigned char attrib
 
 void createFiles(BsFat* bsFat){
     int length = 11;
-    char** fileNames = new char*[10] {"programm1.c", "2programm.c", "prog3.c.cpp", "p4rogramm1.c", "program5m.c", "pr6ogramm.c", "progra7mm.c", "programm8.c", "progr9amm.c", "program.cpp"};
+    char** fileNames = new char*[bsFat->numberOfFiles] {"programm1.c", "2programm.c", "prog3.c.cpp", "p4rogramm1.c", "program5m.c", "pr6ogramm.c", "progra7mm.c", "programm8.c", "progr9amm.c", "program.cpp"};
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < bsFat->numberOfFiles; i++) {
         createFile(bsFat, (unsigned int) (rand() % 2100 + 1), fileNames[i], (unsigned char) (rand() % 253 + 1), i, length);
     }
 }
 
 BsFat* createBsFat(unsigned int _blockSize, unsigned int _fatSize){
     BsFat* bsFat = new BsFat;
-    bsFat->files = new BsFile*[10];
+    bsFat->numberOfFiles = 10;
+    bsFat->files = new BsFile*[bsFat->numberOfFiles];
     bsFat->blockSize = _blockSize;
     bsFat->fatSize = _fatSize;
     bsFat->status = new unsigned char[_fatSize / _blockSize];
 
-    for (int i = 0; i < _fatSize / _blockSize; ++i) {
+    for (int i = 0; i < _fatSize / _blockSize; i++) {
         bsFat->status[i] = FREE;
     }
 
@@ -138,21 +150,13 @@ BsFat* createBsFat(unsigned int _blockSize, unsigned int _fatSize){
     bsFat->status[10] = CORRUPTED;
     bsFat->status[21] = CORRUPTED;
 
-    for (int i = 0; i < _fatSize / _blockSize; ++i) { // nur zur Ausgabe
-        std::cout << bsFat->status[i] << ", ";
-    }
-
-    std::cout << std::endl;
+    showFat(bsFat);
 
     createFiles(bsFat);
 
-    for (int i = 0; i < _fatSize / _blockSize; ++i) { // nur zur Ausgabe
-        std::cout << bsFat->status[i] << ", ";
-    }
+    showFat(bsFat);
 
-    std::cout << std::endl; // nur zur Ausgabe
-
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < bsFat->numberOfFiles; i++) {
         BsCluster* bsCluster = bsFat->files[i]->cluster;
         std::cout << "Groesse File: " << bsFat->files[i]->size << "Mb;  "; // nur zur Ausgabe
         while(bsCluster != nullptr){
@@ -167,8 +171,27 @@ BsFat* createBsFat(unsigned int _blockSize, unsigned int _fatSize){
     return bsFat;
 }
 
+void deleteFile (BsFat* pFat, char* fileName) {
+    for (int i = 0; i < pFat->numberOfFiles; i++) {
+        if (strcmp(pFat->files[i]->name, fileName) == 0) {
+            BsCluster* currentCluster = pFat->files[i]->cluster;
+            do {
+                pFat->status[currentCluster->positionInStatusArray] = FREE;
+                BsCluster* nextCluster = currentCluster->nextElement;
+                delete currentCluster;
+                currentCluster = nextCluster;
+            } while(currentCluster != nullptr);
+            delete pFat->files[i];
+//            std::cout << pFat->files[i]->attributes << std::endl;
+//            std::cout << pFat->files[i]->name << std::endl; // nur zur Überprüfung
+        }
+    }
+}
+
 int main() {
-    createBsFat(512, 16384);
+    BsFat* test = createBsFat(512, 16384);
+    deleteFile(test, "programm1.c");
+    showFat(test);
 
     std::cout << "Number of Blocks: " <<  numberOfBlocksGlobal << std::endl;
 }
