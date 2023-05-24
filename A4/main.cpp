@@ -269,7 +269,7 @@ void defragDisk(struct BsFat* pFat){
                 counter++;
                 current = current->nextElement;
             }
-            std::cout << "Beende Degragmentierung von Datei: " << pFat->files[i]->name << std::endl;
+            std::cout << "Beende Defragmentierung von Datei: " << pFat->files[i]->name << std::endl;
             std::cout << "Grad der Fragmentierung betraegt nun: " << getFragmentation(pFat) * 100 << "%\n"  << std::endl;
         }
     }
