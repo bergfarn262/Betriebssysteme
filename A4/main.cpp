@@ -276,6 +276,111 @@ void defragDisk(struct BsFat* pFat){
 
 }
 
+
+/**
+ *  PROTOTYP
+ **/
+int getFreeConnectedBlocks(BsFat* pFat, int startIndex) {
+    int counter = 0;
+    int index = startIndex;
+    unsigned char* statusArray = pFat->status;
+    while (statusArray[index] == FREE) {
+        counter++;
+    }
+    return counter;
+}
+
+int getIndexByFileName(BsFat* pFat, char* filename) {
+    for (int i = 0; i < pFat->numberOfFiles; i++) {
+        if (pFat->files[i]->name == filename) {
+            return i
+        }
+    }
+    return -1;
+}
+
+void insertFile(BsFat* pFat, int index, char* filename) {
+    BsFile file = pFat->files[getIndexByFileName(pFat, filename)];
+    BsCluster currentCluster = file->cluster;
+    unsigned char* status = pFat->status;
+    while (currentCluster != nullptr) {
+        if (status[index] == FREE;) {
+            status[index] = OCCUPIED;
+            file->cluster->positionInStatusArray = index;
+            index++;
+            currentCluster = currentCluster.nextElement;
+        } else {
+            index++;
+        }
+    }
+}
+
+int* createHelpArray (BsFat* pFat) {
+    int* helpArray = int*[pFat->numberOfFiles];
+    for (int i = 0; i < pFat->numberOfFiles; i++) {
+        if (pFat->files[i] != nullptr) {
+            helpArray[i] = 1
+        } else {
+            helpArray[i] = 0;
+        }
+    }
+    return helpArray;
+}
+
+void defragDiskPrototype(struct BsFat* pFat){
+    unsigned char* status = pFat->status;
+    for (int i = 0; i < (pFat->fatSize / pFat->blockSize); i++) {
+        if (status[i] == OCCUPIED) {
+            status[i] == FREE;
+        }
+    }
+    int pointer = 0;
+    int gap = -1;
+    do {
+        gap = getFreeConnectedBlocks(pFat, pointer);
+    } while (gap == 0)
+    int* helpArray = createHelpArray(pFat);
+    while (pointer < (pFat->fatSize / pFat->blockSize)){
+        bool hasFit = false;
+        for (int j = 0; j < pFat->numberOfFiles; j++) {
+            if (helpArray[j] = 1) {
+                int blocksInFile = ceil((double)pFat->files[j]->size / (double) bsFat->blockSize);
+                if (blocksInFile == gap) {
+                    insertFile(pFat, pointer, pFat->files[j]->name);
+                    helpArray[j] = 0;
+                    hasFit = true;
+                    pointer += blocksInFile;
+                    gap = getFreeConnectedBlocks(pFat, pointer);
+                }
+            }
+        }
+        if (!hasFit) {
+            int indexOfNextSmallerFile = -1;
+            int blocksOfNextSmallerFile = -1;
+            for (int j = 0; j < pFat->numberOfFiles; j++) {
+                if (helpArray[j] = 1) {
+                    int blocksInFile = ceil((double)pFat->files[j]->size / (double) bsFat->blockSize);
+                    if (blocksInFile < gap && blocksInFile > blocksOfNextSmallerFile) {
+                        indexOfNextSmallerFile = j;
+                        blocksOfNextSmallerFile = blocksInFile;
+                    }
+                }
+            }
+            if (blocksOfNextSmallerFile > 0) {
+                insertFile(pFat, pointer, pFat->files[indexOfNextSmallerFile]->name);
+                helpArray[indexOfNextSmallerFile] = 0;
+                hasFit = true;
+                pointer += blocksOfNextSmallerFile;
+                gap = getFreeConnectedBlocks(pFat, pointer);
+            } else {
+                gap += getFreeConnectedBlocks(pFat, (pointer + gap + 1));
+            }
+        }
+    }
+}
+/** **/
+
+
 int main() {
     BsFat* bsFat = createBsFat(512, 16384);
     char fileToSearch[] = "programm1.c";
