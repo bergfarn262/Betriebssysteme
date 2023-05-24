@@ -123,17 +123,11 @@ void createFile(BsFat* bsFat, int sizeFile, char* filename, unsigned char attrib
         for (int i = 0; i < numberOfBlocks; i++) {
             pos = (rand() % (bsFat->fatSize / bsFat->blockSize));
             while(bsFat->status[pos] != FREE){
-                if(getFreeDiskSpace(bsFat) == 0){
-                    std::cout << "Fehler! Kein Speicher frei!" << std::endl;
-                    break;
-                }
                 pos = (rand() % (bsFat->fatSize / bsFat->blockSize));
             }
             bsClusters[i]->positionInStatusArray = pos;
             bsFat->status[pos] = OCCUPIED;
-            std::cout << pos << ";"; // nur zur Ausgabe
         }
-        std::cout << std::endl; // nur zur Ausgabe
     } else{
         std::cerr << "Die File konnte nicht erstellt werden, weil der Name nicht der Konvention entspricht (" << filename
         << ") oder weil die File zu gross ist: (numberOfBlocksNeeded: "
@@ -226,62 +220,17 @@ float getFragmentation(BsFat* pFat) {
             numberOfBlocks++;
         }
         int length = maxIndex - minIndex + 1;
-        std::cout << (float)(length - numberOfBlocks) / length << std::endl; // nur zur Ausgabe
         sumOfFrag += (float)(length - numberOfBlocks) / length;
     }
     return  sumOfFrag / pFat->numberOfFiles;
 }
-
-/**
- * Algorithmus:
- * berechne größe Lücke
- * berechne größe File (Blöcke)
- * 1. Fall: File passt perfekt -> File reinschreiben
- * 2. Fall: keine File passt (alle zu klein) -> nächst größere File reinschreiben
- * 3. Fall: keine File Passt (alle zu groß) -> check nächste Lücke und schreib passende rein (mit der Lücke) oder nächst größere wenn wieder nicht passt
- *
- */
-
-/*void defragDisk(struct BsFat* pFat){
-    for (int i = 0; i < pFat->fatSize / pFat->blockSize; i++) {
-        if(pFat->status[i] == OCCUPIED){
-            pFat->status[i] = FREE;
-        }
-    }
-
-    unsigned int counter = 0;
-
-    for (int i = 0; i < pFat->numberOfFiles; i++) {
-        if(pFat->files[i] == nullptr){
-            continue;
-        }
-
-        std::cout << "Defragmentierung der " << i+1 << ". File." << std::endl;
-
-        BsCluster* current = pFat->files[i]->cluster;
-
-        while(current != nullptr){
-            if(pFat->status[counter] == FREE){
-                current->positionInStatusArray = counter;
-            } else{
-                do{
-                    counter++;
-                }while(pFat->status[counter] != FREE);
-                current->positionInStatusArray = counter;
-            }
-            pFat->status[counter] = OCCUPIED;
-            counter++;
-            current = current->nextElement;
-        }
-        std::cout << "Defragmentierung der " << i+1 << ". File abgeschlossen!" << std::endl;
-    }
-}*/
 
 void defragDisk(struct BsFat* pFat){
     unsigned int counter = 0;
 
     for (int i = 0; i < pFat->numberOfFiles; i++) {
         if(pFat->files[i] != nullptr){
+            std::cout << "Beginne Degragmentierung von Datei: " << pFat->files[i]->name << std::endl;
             BsCluster* current = pFat->files[i]->cluster;
 
             while (current != nullptr) {
@@ -320,6 +269,8 @@ void defragDisk(struct BsFat* pFat){
                 counter++;
                 current = current->nextElement;
             }
+            std::cout << "Beende Degragmentierung von Datei: " << pFat->files[i]->name << std::endl;
+            std::cout << "Grad der Fragmentierung betraegt nun: " << getFragmentation(pFat) * 100 << "%\n"  << std::endl;
         }
     }
 
