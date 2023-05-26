@@ -95,7 +95,7 @@ unsigned int countTLBEntries(struct Process* p){
     unsigned  int numberOfEntriesInTlb = 0;
 
     for (int i = 0; i < p->page_table->size; i++) {
-        if((p->page_table->entries[i]->frame_attributes) == FRAME_TLB){
+        if((p->page_table->entries[i]->frame_attributes) == FRAME_TLB || p->page_table->entries[i]->frame_attributes == TLB_AND_REFERENCED){
             numberOfEntriesInTlb++;
         }
     }

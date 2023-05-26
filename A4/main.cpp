@@ -28,6 +28,16 @@ struct BsFat{
     unsigned int fatSize;
 };
 
+int tstBit(const char* array, int bitToTest){
+    return (array[bitToTest/8] & (int) pow(2, (bitToTest % 8) - 1)) ? 1 : 0;
+}
+
+void getAttributes(const char* array) {
+    tstBit(array, 1) ? std::cout << "This file is executable." << std::endl : std::cout << "This file cannot be executed." << std::endl;
+    tstBit(array, 2) ? std::cout << "This file is read only." << std::endl : std::cout << "This file can be edited." << std::endl;
+    tstBit(array, 3) ? std::cout << "This file is visible." << std::endl : std::cout << "This file is hidden."<< std::endl;
+}
+
 bool checkConvention(const char* name, const unsigned int length){
     int dot = 0;
     for (int i = 0; i < length; i++) {
@@ -235,6 +245,7 @@ void defragDisk(struct BsFat* pFat){
 
             while (current != nullptr) {
                 if (pFat->status[counter] == FREE) {
+                    pFat->status[counter] = RESERVED;
                     pFat->status[current->positionInStatusArray] = FREE;
                     current->positionInStatusArray = counter;
                     pFat->status[counter] = OCCUPIED;
@@ -245,6 +256,7 @@ void defragDisk(struct BsFat* pFat){
                     }
 
                     if(pFat->status[counter] == FREE){
+                        pFat->status[counter] = RESERVED;
                         pFat->status[current->positionInStatusArray] = FREE;
                         current->positionInStatusArray = counter;
                         pFat->status[counter] = OCCUPIED;
@@ -293,22 +305,22 @@ int getFreeConnectedBlocks(BsFat* pFat, int startIndex) {
 int getIndexByFileName(BsFat* pFat, char* filename) {
     for (int i = 0; i < pFat->numberOfFiles; i++) {
         if (pFat->files[i]->name == filename) {
-            return i
+            return i;
         }
     }
     return -1;
 }
 
 void insertFile(BsFat* pFat, int index, char* filename) {
-    BsFile file = pFat->files[getIndexByFileName(pFat, filename)];
-    BsCluster currentCluster = file->cluster;
+    BsFile* file = pFat->files[getIndexByFileName(pFat, filename)];
+    BsCluster* currentCluster = file->cluster;
     unsigned char* status = pFat->status;
     while (currentCluster != nullptr) {
-        if (status[index] == FREE;) {
+        if (status[index] == FREE) {
             status[index] = OCCUPIED;
             file->cluster->positionInStatusArray = index;
             index++;
-            currentCluster = currentCluster.nextElement;
+            currentCluster = currentCluster->nextElement;
         } else {
             index++;
         }
@@ -316,10 +328,10 @@ void insertFile(BsFat* pFat, int index, char* filename) {
 }
 
 int* createHelpArray (BsFat* pFat) {
-    int* helpArray = int*[pFat->numberOfFiles];
+    int* helpArray = new int[pFat->numberOfFiles];
     for (int i = 0; i < pFat->numberOfFiles; i++) {
         if (pFat->files[i] != nullptr) {
-            helpArray[i] = 1
+            helpArray[i] = 1;
         } else {
             helpArray[i] = 0;
         }
@@ -338,13 +350,13 @@ void defragDiskPrototype(struct BsFat* pFat){
     int gap = -1;
     do {
         gap = getFreeConnectedBlocks(pFat, pointer);
-    } while (gap == 0)
+    } while (gap == 0);
     int* helpArray = createHelpArray(pFat);
     while (pointer < (pFat->fatSize / pFat->blockSize)){
         bool hasFit = false;
         for (int j = 0; j < pFat->numberOfFiles; j++) {
-            if (helpArray[j] = 1) {
-                int blocksInFile = ceil((double)pFat->files[j]->size / (double) bsFat->blockSize);
+            if (helpArray[j] == 1) {
+                int blocksInFile = ceil((double)pFat->files[j]->size / (double) pFat->blockSize);
                 if (blocksInFile == gap) {
                     insertFile(pFat, pointer, pFat->files[j]->name);
                     helpArray[j] = 0;
@@ -358,8 +370,8 @@ void defragDiskPrototype(struct BsFat* pFat){
             int indexOfNextSmallerFile = -1;
             int blocksOfNextSmallerFile = -1;
             for (int j = 0; j < pFat->numberOfFiles; j++) {
-                if (helpArray[j] = 1) {
-                    int blocksInFile = ceil((double)pFat->files[j]->size / (double) bsFat->blockSize);
+                if (helpArray[j] == 1) {
+                    int blocksInFile = ceil((double)pFat->files[j]->size / (double) pFat->blockSize);
                     if (blocksInFile < gap && blocksInFile > blocksOfNextSmallerFile) {
                         indexOfNextSmallerFile = j;
                         blocksOfNextSmallerFile = blocksInFile;
