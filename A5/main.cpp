@@ -120,10 +120,15 @@ int checkAndCorrectHammingCode(char* hammingArray, int numberBits){
             }
         }
     }
-    if (tstBit(hammingArray, errorBit)) {
-        clrBit(hammingArray, errorBit);
+    if (errorBit < numberBits) {
+        if (tstBit(hammingArray, errorBit)) {
+            clrBit(hammingArray, errorBit);
+        } else {
+            setBit(hammingArray, errorBit);
+        }
+        std::cout << "Es wurden versucht den Fehler zu beheben. Es ist trotzdem moeglich, dass das Ergebnis falsch ist. " << std::endl;
     } else {
-        setBit(hammingArray, errorBit);
+        std::cout << "Es wurden zu viele Bits geflippt, um den Fehler zu beheben." << std::endl;
     }
     return errorBit;
 }
