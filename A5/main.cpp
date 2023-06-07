@@ -15,7 +15,7 @@ int tstBit(const char* array, int bitToTest){
 
 int getNumberParityBits(int numberDataBits){
     int counter = 1;
-    while(1){
+    while(true){
         if((int) pow(2, counter) > numberDataBits){
             return counter;
         }
@@ -69,18 +69,14 @@ void showArray(const char* byteArray, int numberBits){
 int computeHammingCode(const char* byteArrayData, int numberDataBits, char * hammingArray){
     char* copiedHamming = copyArrayToHammingArray(byteArrayData, numberDataBits, hammingArray);
 
-    //showArray(hammingArray, numberDataBits + getNumberParityBits(numberDataBits));
-
-    int* parityBits = new int[getNumberParityBits(numberDataBits)];
     for (int i = 0; i < getNumberParityBits(numberDataBits) ; i++) {
-        //std::cout << calculateParityBitOnHamming((int) pow(2, i),copiedHamming,getNumberParityBits(numberDataBits) + numberDataBits) << std::endl;
         if(calculateParityBitOnHamming((int) pow(2, i),copiedHamming,getNumberParityBits(numberDataBits) + numberDataBits) == 0){
             clrBit(copiedHamming, (int) pow(2,i));
         } else{
             setBit(copiedHamming, (int) pow(2,i));
         }
     }
-    //showArray(hammingArray, numberDataBits + getNumberParityBits(numberDataBits));
+
     return 1;
 }
 
@@ -110,26 +106,28 @@ void showDataBits(const char* byteArray, int numberBits){
 }
 
 int checkAndCorrectHammingCode(char* hammingArray, int numberBits){
-    int counter = 0;
     int errorBit = 0;
     for (int i = 1; i <= numberBits; i++) {
         if(isParityBit(i)){
             if((calculateParityBitOnHamming(i, hammingArray, numberBits) != tstBit(hammingArray,i))){
-                std::cout << "i: " << i << std::endl;
                 errorBit+= i;
             }
         }
     }
-    if (errorBit < numberBits) {
+
+    if(errorBit == 0){
+        std::cout << "Es wurde kein Fehler gefunden!" << std::endl;
+    } else if (errorBit < numberBits) {
         if (tstBit(hammingArray, errorBit)) {
             clrBit(hammingArray, errorBit);
         } else {
             setBit(hammingArray, errorBit);
         }
-        std::cout << "Es wurden versucht den Fehler zu beheben. Es ist trotzdem moeglich, dass das Ergebnis falsch ist. " << std::endl;
-    } else {
-        std::cout << "Es wurden zu viele Bits geflippt, um den Fehler zu beheben." << std::endl;
+        std::cout << "Es wurde versucht den Fehler zu beheben. Es ist trotzdem moeglich, dass das Ergebnis falsch ist." << std::endl;
+    } else if(errorBit >= numberBits){
+        std::cout << "Es wurden zu viele Bits geflippt. Der Fehler kann nicht behoben werden." << std::endl;
     }
+
     return errorBit;
 }
 
@@ -142,18 +140,28 @@ int main() {
     char * hammingArray = initHammingArray(length);
     computeHammingCode(array, length, hammingArray);
 
+    std::cout << "Ausgangsbitfolge:         ";
     showArray(array, length);
+
+    std::cout << "Hammingcode:              ";
     showArray(hammingArray, lengthHamming);
+
+    std::cout << "Databits:                 ";
+    showDataBits(hammingArray, lengthHamming);
+
+    std::cout << "Paritybits:               ";
     showParityBits(hammingArray, lengthHamming);
 
-    setBit(hammingArray, 7);
+    //setBit(hammingArray, 7);
+    clrBit(hammingArray, 9);
 
+    std::cout << "Hammingcode (changed):    ";
     showArray(hammingArray, lengthHamming);
 
-    std::cout << checkAndCorrectHammingCode(hammingArray, lengthHamming) << std::endl;
+    int errorBit = checkAndCorrectHammingCode(hammingArray, lengthHamming);
+    errorBit == 0 ? std::cout << std::endl : std::cout << "Das geflippte Bit befindet sich an der Stelle: " << errorBit << std::endl;
 
+    std::cout << "Hammingcode (correct):    ";
     showArray(hammingArray, lengthHamming);
-
-
     return 0;
 }
