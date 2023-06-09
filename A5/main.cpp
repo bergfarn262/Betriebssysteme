@@ -52,9 +52,13 @@ int calculateParityBitOnHamming(int parityBit, const char* hammingArray, int num
         for (int j = i; j <= parityBit + i - 1 && j <= numberOfBits ; j++) {
             if(tstBit(hammingArray,j) == 1 && j != parityBit){
                 counter++;
+                std::cout << 1;
+            } else {
+                std::cout << 0;
             }
         }
     }
+    std::cout << std::endl;
     return counter % 2 == 0 ? 0 : 1;
 }
 
@@ -131,13 +135,33 @@ int checkAndCorrectHammingCode(char* hammingArray, int numberBits){
     return errorBit;
 }
 
-int main() {
-    char array[] = {86, 'a', 'l', 'l', 'o'};
+int getDataBits(const char* byteArray, int numberBits){
+    int counter = 0;
+    for (int i = 1; i <= numberBits; i++) {
+        if(isParityBit(i) == 1){
+            counter++;
+        }
+    }
+    return counter;
+}
 
-    int length = 8;
-    int lengthHamming = length + getNumberParityBits(length);
+char* hammingToData(char* hammingArray, int numberOfBits){
+    int counter = 0;
+    int length = (numberOfBits - getNumberParityBits(getDataBits(hammingArray, numberOfBits)))/8 + 1;
+    char* dataArray = new char [length];
+    for (int i = 1; i < numberOfBits; i++) {
+        if (!isParityBit(i)){
+            tstBit(hammingArray, i) ? setBit(dataArray, i-counter) : clrBit(dataArray, i-counter);
+        } else {
+            counter++;
+        }
+    }
+    dataArray[length-1] = '\0';
+    return dataArray;
+}
 
-    char * hammingArray = initHammingArray(length);
+void printHammingProcess(char* array, int length, char* hammingArray, int lengthHamming) {
+
     computeHammingCode(array, length, hammingArray);
 
     std::cout << "Ausgangsbitfolge:         ";
@@ -152,16 +176,69 @@ int main() {
     std::cout << "Paritybits:               ";
     showParityBits(hammingArray, lengthHamming);
 
-    //setBit(hammingArray, 7);
-    clrBit(hammingArray, 9);
+}
 
+void printHammingResult (char* array, int length, char* hammingArray, int lengthHamming) {
     std::cout << "Hammingcode (changed):    ";
     showArray(hammingArray, lengthHamming);
 
     int errorBit = checkAndCorrectHammingCode(hammingArray, lengthHamming);
-    errorBit == 0 ? std::cout << std::endl : std::cout << "Das geflippte Bit befindet sich an der Stelle: " << errorBit << std::endl;
+    errorBit == 0 ? std::cout << "" : std::cout << "Das geflippte Bit befindet sich an der Stelle: " << errorBit << std::endl;
+    std::cout << "Das urspruengliche Wort lautet: ";
+    for (int i = 0; i < lengthHamming  / 8; i++) {
+        std::cout << array[i];
+    }
+    std::cout << std::endl;
+    std::cout << "Das Wort lautet: " << hammingToData(hammingArray, lengthHamming) << std::endl;
+
 
     std::cout << "Hammingcode (correct):    ";
     showArray(hammingArray, lengthHamming);
+}
+
+int main() {
+    char array[] = {'a',86 , 'l', 'l', 'o'};
+
+    //Bsp 1 (Bitfolge geflippt, aber als richtig erkannt)
+    int length = 9;
+
+    int lengthHamming1 = length + getNumberParityBits(length);
+    char * hammingArray1 = initHammingArray(length);
+
+    printHammingProcess(array, length, hammingArray1, lengthHamming1);
+
+//    setBit(hammingArray1, 2);
+//    clrBit(hammingArray1, 1);
+//    setBit(hammingArray1, 3);
+
+    printHammingResult(array, length, hammingArray1, lengthHamming1);
+
+    std::cout << std::endl;
+
+
+    //Bsp 2
+    length = 17;
+    int lengthHamming2 = length + getNumberParityBits(length);
+    char * hammingArray2 = initHammingArray(length);
+
+    printHammingProcess(array, length, hammingArray2, lengthHamming2);
+
+//    setBit(hammingArray2, 7);
+
+    printHammingResult(array, length, hammingArray2, lengthHamming2);
+
+    std::cout << std::endl;
+
+    //Bsp 3
+    length = 40;
+    int lengthHamming3 = length + getNumberParityBits(length);
+    char * hammingArray3 = initHammingArray(length);
+
+    printHammingProcess(array, length, hammingArray3, lengthHamming3);
+
+//    setBit(hammingArray3, 7);
+
+    printHammingResult(array, length, hammingArray3, lengthHamming3);
+
     return 0;
 }
